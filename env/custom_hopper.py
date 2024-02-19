@@ -11,27 +11,34 @@ from .mujoco_env import MujocoEnv
 from scipy.stats import truncnorm
 
 class CustomHopper(MujocoEnv, utils.EzPickle):
-    def __init__(self, domain=None):
+    def __init__(self, domain=None, udr=False):
         MujocoEnv.__init__(self, 4)
         utils.EzPickle.__init__(self)
 
         self.original_masses = np.copy(self.sim.model.body_mass[1:])    # Default link masses
+        self.udr = udr
 
         if domain == 'source':  # Source environment has an imprecise torso mass (1kg shift)
             self.sim.model.body_mass[1] -= 1.0
 
 
     def set_random_parameters(self):
-        """Set random masses
-        TODO
-        """
+        """Set random masses"""
         self.set_parameters(*self.sample_parameters())
 
     def sample_parameters(self):
-        """Sample masses according to a domain randomization distribution
-        TODO
-        """
-        return
+        """Sample masses according to a domain randomization distribution"""
+        thigh = self.original_masses[1]
+        leg = self.original_masses[2]
+        foot = self.original_masses[3]
+
+        thigh = np.random.uniform(thigh-thigh/2,thigh+thigh,2)
+        leg = np.random.uniform(leg-leg/2,leg+leg/2)
+        foot = np.random.uniform(foot-foot/2,foot+foot/2)
+
+        torso = self.original_masses[0]
+        
+        return np.array([torso, thigh, leg, foot])
 
     def get_parameters(self):
         """Get value of mass for each link"""
@@ -41,6 +48,9 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
     def set_parameters(self, task):
         """Set each hopper link's mass to a new value"""
         self.sim.model.body_mass[1:] = task
+
+    def set_custom_parameters(self, params):
+        self.sim.model.body_mass[2:] = params
 
     def step(self, a):
         """Step the simulation to the next timestep
@@ -70,10 +80,23 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
             self.sim.data.qvel.flat
         ])
 
+    def set_deceptor(self, deceptor):
+      self.deceptor = deceptor
+
+    def _generate_parameters(self):
+      masses = self.original_masses[1:]
+      obs = np.array([*masses],dtype=np.float32)
+      action, _ = self.deceptor.predict(obs)
+      self.sim.model.body_mass[2:] = action
+
     def reset_model(self):
         """Reset the environment to a random initial state"""
         qpos = self.init_qpos + self.np_random.uniform(low=-.005, high=.005, size=self.model.nq)
         qvel = self.init_qvel + self.np_random.uniform(low=-.005, high=.005, size=self.model.nv)
+        if self.udr == "True":
+          self.set_random_parameters()
+        elif self.udr == "Deception":
+          self._generate_parameters()
         self.set_state(qpos, qvel)
         return self._get_obs()
 
@@ -108,3 +131,16 @@ gym.envs.register(
         kwargs={"domain": "target"}
 )
 
+gym.envs.register(
+        id="CustomHopper-dr-v0",
+        entry_point="%s:CustomHopper" % __name__,
+        max_episode_steps=500,
+        kwargs={"domain": "source", "udr": "True"}
+)
+
+gym.envs.register(
+        id="CustomHopper-deception-v0",
+        entry_point="%s:CustomHopper" % __name__,
+        max_episode_steps=500,
+        kwargs={"domain": "source", "udr": "Deception"}
+)

@@ -88,3 +88,41 @@ def test_plot(rew, lens):
   plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.5,
                       wspace=0.35)
   plt.show()
+
+
+def create_model(alg, env, seed=None):
+    if alg == 'ppo':
+        model = PPO("MlpPolicy", env, seed=seed)
+    elif alg == 'sac':
+        model = SAC("MlpPolicy", env, seed=seed)
+    else:
+        raise ValueError(f"RL Algo not supported: {alg}")
+    return model
+
+def load_model(alg, env, file):
+    if alg == 'ppo':
+        model = PPO.load(file, env=env)
+    elif alg == 'sac':
+        model = SAC.load(file, env=env)
+    else:
+        raise ValueError(f"RL Algo not supported: {alg}")
+    return model
+
+def plot_results(log_folder, title="Learning Curve"):
+    """
+    plot the results
+
+    :param log_folder: (str) the save location of the results to plot
+    :param title: (str) the title of the task to plot
+    """
+    x, y = ts2xy(load_results(log_folder), "timesteps")
+    y = moving_average(y, window=50)
+    # Truncate x
+    x = x[len(x) - len(y) :]
+
+    fig = plt.ffigigure(title)
+    plt.plot(x, y)
+    plt.xlabel("Number of Timesteps")
+    plt.ylabel("Rewards")
+    plt.title(title)
+    plt.show()
