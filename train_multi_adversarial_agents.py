@@ -1,17 +1,32 @@
 from env.custom_hopper import *
 
 import gym
-from gym import error, spaces, utils
-from gym.utils import seeding
+from gym import spaces
 import gym.spaces
 import numpy as np
+import sys
+import argparse
 
-import csv
+print('This program parses arguments! Run with --help for more information')
+
+def parse_args(args=sys.argv[1:]):
+    parser = argparse.ArgumentParser()
+    # parser.add_argument("--render", action='store_false', help="Render the environment during training")
+    parser.add_argument("--save_mass_log", action='store_true', default=False, help="Save mass log during training in tmp/gym/modelname/mass_monitor.csv; default: False, slows training down significantly")
+    parser.add_argument("--print_extrainfo", action='store_false', default=True, help="Disables printing the generated masses, mean_reward and reward during training; default: False")
+    parser.add_argument("--num_episodes", type=int, default=200, help="Number of episodes to train the adversarial agent (SAC); default: 200")
+    parser.add_argument("--total_timesteps", type=int, default=500, help="Number of timesteps to train the adversarial agent (SAC); default: 500")
+    parser.add_argument("--deception_train_steps", type=int, default=50, help="How many training steps the deceptor does for each episode; default: 50")
+    return parser.parse_args(args)
+
+args = parse_args()
+print(args)
+
 
 class AdversarialAgent(gym.Env):
   metadata = {'render.modes': ['human']}
 
-  def __init__(self,agent,agent_env,num_ep,logdir):
+  def __init__(self,agent,agent_env,num_ep,logdir=None):
 
     self.action_space = spaces.Box(
         low=np.array([1.0,1.0,1.0]),
@@ -29,15 +44,16 @@ class AdversarialAgent(gym.Env):
     self.agent = agent
     self.agent_env = agent_env
     self.logdir = logdir
-    self.mass_monitor_filepath = f"{self.logdir}/mass_monitor.csv"
 
     #Training parameters
     # - number of episode on which to test the new masses
     self.num_ep = num_ep
 
-    with open(self.mass_monitor_filepath, 'w') as csvfile:
-      writer = csv.writer(csvfile)
-      writer.writerow(['mass1','mass2','mass3'])
+    if args.save_mass_log:
+      self.mass_monitor_filepath = f"{self.logdir}/mass_monitor.csv"
+      with open(self.mass_monitor_filepath, 'w') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['mass1','mass2','mass3'])
 
 
   def step(self, action):
@@ -51,6 +67,7 @@ class AdversarialAgent(gym.Env):
       current_return = 0
       obs = self.agent_env.reset()
       self.agent_env.set_custom_parameters(generated_masses)
+
       for _ in range(500):
         agent_action, _ = self.agent.predict(obs)
         obs, reward, done, _ = self.agent_env.step(agent_action)
@@ -62,7 +79,10 @@ class AdversarialAgent(gym.Env):
     mean_reward = np.mean(np.array(returns))
 
     reward = 1/mean_reward
-    print(f'{generated_masses}->{mean_reward}->{reward}')
+    
+    if args.print_extrainfo:
+      m1, m2, m3 = float(generated_masses[0]), float(generated_masses[1]), float(generated_masses[2])
+      print(f'{float(m1):>10.4f}{float(m2):>10.4f}{float(m3):>10.4f}{float(mean_reward):^30.4f}{float(reward):<30.4f}')
 
     return np.array([generated_masses],dtype=np.float32), reward, True, {}
 
@@ -78,9 +98,10 @@ class AdversarialAgent(gym.Env):
     masses = self.agent_env.get_parameters()
     masses = masses[1:]
 
-    with open(self.mass_monitor_filepath, 'a') as csvfile:
-      writer = csv.writer(csvfile)
-      writer.writerow(masses)
+    if args.save_mass_log:
+      with open(self.mass_monitor_filepath, 'a') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(masses)
 
     #print(masses)
     return np.array([masses],dtype=np.float32)
@@ -105,26 +126,29 @@ gym.envs.register(
 )
 
 
-from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.callbacks import StopTrainingOnMaxEpisodes
-from stable_baselines3.common.monitor import Monitor
 from stable_baselines3 import SAC, PPO
-
 from datetime import datetime
+import os
+import csv
 
+start_time = datetime.now()
+
+# Seeds to train the model
 seeds = list(range(1,6))
 
-import os
 
 for seed in seeds:
+    if args.save_mass_log:
+      logdir = f'tmp/gym/adversarial_agent_seed{seed}/'
+      mass_monitor_filepath = logdir + 'mass_monitor.csv'
+      if not os.path.exists(logdir):
+          os.makedirs(logdir, exist_ok=True)
+    else:
+      logdir = None
 
-    logdir = f'tmp/gym/adversarial_agent_seed{seed}/'
-    mass_monitor_filepath = logdir + 'mass_monitor.csv'
+    print(f"Learning with {seed = }, start time: {datetime.now()}")
 
-    if not os.path.exists(logdir):
-        os.makedirs(logdir, exist_ok=True)
-
-    print(f"Learning with {seed = }, {datetime.now()}")
     agent_env = gym.make('CustomHopper-source-deception-v0')
     model = PPO('MlpPolicy', agent_env)
 
@@ -144,18 +168,27 @@ for seed in seeds:
     legs = []
     foots = []
 
-    while total_episodes < 200:
+    if args.print_extrainfo:
+      info1 = "generated_masses"
+      info2 = "mean_reward"
+      info3 = "reward"
+      print(f'{info1:^30} {info2:^25} {info3:^10} ')
+      del info1, info2, info3 # Quick and dirty
+
+    while total_episodes < args.num_episodes:
 
         #Train deception module
-        for i in range(200):
+        for i in range(args.deception_train_steps):
             deception.learn(1, callback_max_episodes)
 
         #Train Agent
-        model.learn(500)
+        model.learn(args.total_timesteps)
 
         total_episodes+=1
-        print('\n',f'{total_episodes}','\n')
+
+        if args.print_extrainfo:
+          print('\n',f'{total_episodes}','\n')
 
     model.save(f'deception_model_agent_dr_seed{seed}.mdl')
 
-print(f"End of learning, 5 models generated, {datetime.now()}")
+print(f"End of learning, {len(seeds)} model(s) generated, finish time: {datetime.now()}, program ran for: {datetime.now() - start_time} ")

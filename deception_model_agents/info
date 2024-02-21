@@ -1,3 +1,5 @@
-Questi modelli sono stati addestrati con total_episodes < 3
-per testare se l'architettura funzionasse. Da Utilizzare solo
-per i test!
+Parser
+
+Parser
+- Scrivere masse su file
+- Stampare su terminale reward 

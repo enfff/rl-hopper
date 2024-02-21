@@ -1,11 +1,11 @@
 import gym
 import gym.spaces
 
+from stable_baselines3.common.callbacks import StopTrainingOnMaxEpisodes
 from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.env_checker import check_env
-from stable_baselines3.common.callbacks import StopTrainingOnMaxEpisodes
 
 from env.custom_hopper import *
 from env.adversarial_agent import *
