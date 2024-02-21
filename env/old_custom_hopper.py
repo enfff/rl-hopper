@@ -1,24 +1,22 @@
 """Implementation of the Hopper environment supporting
 domain randomization optimization."""
+import csv
+import pdb
+from copy import deepcopy
+
 import numpy as np
 import gym
 from gym import utils
 from .mujoco_env import MujocoEnv
+from scipy.stats import truncnorm
 
 class CustomHopper(MujocoEnv, utils.EzPickle):
-    def __init__(self, domain=None, domain_randomization_type=None):
-        """
-            domain:     "source",
-                        "target"
-            dr_type:    "udr"       -> (uniform domain randomization) set_random_parameters,
-                        "deception" -> _generate_parameters,
-                        None
-        """
+    def __init__(self, domain=None, udr=False):
         MujocoEnv.__init__(self, 4)
         utils.EzPickle.__init__(self)
 
         self.original_masses = np.copy(self.sim.model.body_mass[1:])    # Default link masses
-        self.domain_randomization_type = domain_randomization_type
+        self.udr = udr
 
         if domain == 'source':  # Source environment has an imprecise torso mass (1kg shift)
             self.sim.model.body_mass[1] -= 1.0
@@ -26,7 +24,7 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
 
     def set_random_parameters(self):
         """Set random masses"""
-        self.set_parameters(self.sample_parameters())
+        self.set_parameters(*self.sample_parameters())
 
     def sample_parameters(self):
         """Sample masses according to a domain randomization distribution"""
@@ -34,15 +32,13 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
         leg = self.original_masses[2]
         foot = self.original_masses[3]
 
-        thigh = np.random.uniform(thigh-thigh/2,thigh+thigh/2)
+        thigh = np.random.uniform(thigh-thigh/2,thigh+thigh,2)
         leg = np.random.uniform(leg-leg/2,leg+leg/2)
         foot = np.random.uniform(foot-foot/2,foot+foot/2)
 
-        # if self.domain_randomization_type == "deception":
-        #     # No fucking why, but it avoids a bug
-        #     return np.array([self.original_masses[0], thigh, leg, foot])
-
-        return np.array([self.sim.model.body_mass[1], thigh, leg, foot])
+        torso = self.original_masses[0]
+        
+        return np.array([torso, thigh, leg, foot])
 
     def get_parameters(self):
         """Get value of mass for each link"""
@@ -61,7 +57,8 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
 
         Parameters
         ----------
-        a : ndarray,    action to be taken at the current timestep
+        a : ndarray,
+            action to be taken at the current timestep
         """
         posbefore = self.sim.data.qpos[0]
         self.do_simulation(a, self.frame_skip)
@@ -96,20 +93,20 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
         """Reset the environment to a random initial state"""
         qpos = self.init_qpos + self.np_random.uniform(low=-.005, high=.005, size=self.model.nq)
         qvel = self.init_qvel + self.np_random.uniform(low=-.005, high=.005, size=self.model.nv)
-
-        if self.domain_randomization_type == "udr":
+        if self.udr == "True":
           self.set_random_parameters()
-        elif self.domain_randomization_type == "deception":
+        elif self.udr == "Deception":
           self._generate_parameters()
-        
         self.set_state(qpos, qvel)
         return self._get_obs()
 
     def viewer_setup(self):
-        self.viewer.cam.trackbodyid = 1
+        self.viewer.cam.trackbodyid = 2
         self.viewer.cam.distance = self.model.stat.extent * 0.75
         self.viewer.cam.lookat[2] = 1.15
         self.viewer.cam.elevation = -20
+
+
 
 """
     Registered environments
@@ -135,15 +132,16 @@ gym.envs.register(
 )
 
 gym.envs.register(
-        id="CustomHopper-source-udr-v0",
+        id="CustomHopper-dr-v0",
         entry_point="%s:CustomHopper" % __name__,
         max_episode_steps=500,
-        kwargs={"domain": "source", "domain_randomization_type": "udr"}
+        kwargs={"domain": "source", "udr": "True"}
 )
 
 gym.envs.register(
-        id="CustomHopper-source-deception-v0",
+        id="CustomHopper-deception-v0",
         entry_point="%s:CustomHopper" % __name__,
         max_episode_steps=500,
-        kwargs={"domain": "source", "domain_randomization_type": "deception"}
+        kwargs={"domain": "source", "udr": "Deception"}
 )
+

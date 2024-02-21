@@ -1,4 +1,4 @@
-from env.custom_hopper import *
+from env.old_custom_hopper import *
 
 import gym
 from gym import error, spaces, utils
@@ -6,12 +6,10 @@ from gym.utils import seeding
 import gym.spaces
 import numpy as np
 
-import csv
-
 class AdversarialAgent(gym.Env):
   metadata = {'render.modes': ['human']}
 
-  def __init__(self,agent,agent_env,num_ep,logdir):
+  def __init__(self,agent,agent_env,num_ep):
 
     self.action_space = spaces.Box(
         low=np.array([1.0,1.0,1.0]),
@@ -28,16 +26,10 @@ class AdversarialAgent(gym.Env):
     #to update at the end of every cycle
     self.agent = agent
     self.agent_env = agent_env
-    self.logdir = logdir
-    self.mass_monitor_filepath = f"{self.logdir}/mass_monitor.csv"
 
     #Training parameters
     # - number of episode on which to test the new masses
     self.num_ep = num_ep
-
-    with open(self.mass_monitor_filepath, 'w') as csvfile:
-      writer = csv.writer(csvfile)
-      writer.writerow(['mass1','mass2','mass3'])
 
 
   def step(self, action):
@@ -77,11 +69,6 @@ class AdversarialAgent(gym.Env):
     #mean_reward, std_reward = evaluate_policy(self.agent,self.agent_env,n_eval_episodes=self.num_ep)
     masses = self.agent_env.get_parameters()
     masses = masses[1:]
-
-    with open(self.mass_monitor_filepath, 'a') as csvfile:
-      writer = csv.writer(csvfile)
-      writer.writerow(masses)
-
     #print(masses)
     return np.array([masses],dtype=np.float32)
 
@@ -107,55 +94,37 @@ gym.envs.register(
 
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.callbacks import StopTrainingOnMaxEpisodes
-from stable_baselines3.common.monitor import Monitor
 from stable_baselines3 import SAC, PPO
 
-from datetime import datetime
+agent_env = gym.make('CustomHopper-deception-v0')
+model = PPO('MlpPolicy', agent_env)
 
-seeds = list(range(1,6))
+deception_env = gym.make("AdversarialAgent-v0",agent=model,agent_env=agent_env,num_ep=10)
+#check_env(deception_env)
 
-import os
+deception = SAC('MlpPolicy', deception_env)
 
-for seed in seeds:
+agent_env.set_deceptor(deception)
 
-    logdir = f'tmp/gym/adversarial_agent_seed{seed}/'
-    mass_monitor_filepath = logdir + 'mass_monitor.csv'
+total_episodes = 0
+max_step = 500
 
-    if not os.path.exists(logdir):
-        os.makedirs(logdir, exist_ok=True)
+callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=10)
 
-    print(f"Learning with {seed = }, {datetime.now()}")
-    agent_env = gym.make('CustomHopper-source-deception-v0')
-    model = PPO('MlpPolicy', agent_env)
+thighs = []
+legs = []
+foots = []
 
-    deception_env = gym.make("AdversarialAgent-v0",agent=model,agent_env=agent_env,num_ep=10, logdir=logdir)
-    #check_env(deception_env)
+while total_episodes<200:
 
-    deception = SAC('MlpPolicy', deception_env)
+    #Train deception module
+    for i in range(20):
+      deception.learn(1, callback_max_episodes)
 
-    agent_env.set_deceptor(deception)
+    #Train Agent
+    model.learn(500)
 
-    total_episodes = 0
-    max_step = 500
+    total_episodes+=1
+    print('\n',f'{total_episodes}','\n')
 
-    callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=10)
-
-    thighs = []
-    legs = []
-    foots = []
-
-    while total_episodes < 200:
-
-        #Train deception module
-        for i in range(200):
-            deception.learn(1, callback_max_episodes)
-
-        #Train Agent
-        model.learn(500)
-
-        total_episodes+=1
-        print('\n',f'{total_episodes}','\n')
-
-    model.save(f'deception_model_agent_dr_seed{seed}.mdl')
-
-print(f"End of learning, 5 models generated, {datetime.now()}")
+model.save('deception_model_agent_dr.mdl')
