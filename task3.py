@@ -14,9 +14,10 @@ from env.custom_hopper import *
 from stable_baselines3 import PPO,SAC
 # from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 # from stable_baselines3.common.results_plotter import load_results, ts2xy
 
+import os
 from utils import curve_to_plot, train, test, test_plot
 
 # Compatibilità Enf
@@ -89,12 +90,22 @@ mpl.use("GTK3Agg")
 
 # # BEST LEARNING RATE: 0.001
 
-# env = gym.make('CustomHopper-target-v0')
-# model, env = train(env, Seed=5, lr=0.001)
-# model.save("./target2")
-# rew,lens = test(model,env)
-# test_plot(rew,lens)
+if not os.path.exists("target.zip"):
+  print("Training target")
+  env = gym.make('CustomHopper-target-v0')
+  model, env = train(env, Seed=5, lr=0.001)
+  model.save("./target")
+  rew,lens = test(model,env)
+  test_plot(rew,lens)
 
+from utils import load_model
+
+env = gym.make('CustomHopper-target-v0')
+model = load_model('ppo', env, 'target')
+rew, lens = test(model, Monitor(env, "./tmp/gym/target/"))
+test_plot(rew, lens, title="target")
+
+## Testing
 # load source model from the previous task
 model_src = PPO.load("source")
 policy_src = model_src.policy
@@ -111,17 +122,17 @@ rew1,lens1 = test(policy_src, monitor_src, False)
 source.close()
 print("test source -> source")
 # source.render()
-test_plot(rew1,lens1)
+test_plot(rew1,lens1, title="source -> source")
 
 # source -> target
 monitor_trg= Monitor(target)
 rew2,lens2 = test(policy_src,monitor_trg, False)
 print("test source -> target")
-test_plot(rew2,lens2)
+test_plot(rew2,lens2, title="source -> target")
 
 # target -> target
 monitor_trg2= Monitor(target)
 rew3,lens3 = test(policy_trg,monitor_trg2, False)
 target.close()
 print("test target -> target")
-test_plot(rew3,lens3)
+test_plot(rew3,lens3, title="target -> target")
