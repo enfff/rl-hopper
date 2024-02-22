@@ -66,10 +66,14 @@ mpl.use("GTK3Agg")
 
 # # BEST LEARNING RATE: 0.003
 
+from datetime import datetime
+
 if not os.path.exists("source_udr.zip"):
+    start_time = datetime.now()
     env = gym.make('CustomHopper-source-udr-v0')
     model, env = train(env, Seed = 4, lr = 0.003, total_timesteps=200000)
     model.save("./source_udr")
+    print(f"Model trained in: {datetime.now() - start_time}")
     rew,lens = test(model,env)
     test_plot(rew,lens, title="UDR source")
 
@@ -81,13 +85,13 @@ policy_udr = source_udr.policy
 # rew, lens = test(source_udr, source, render=False)
 # test_plot(rew,lens, title="UDR source")
 
-print("test UDR source -> source")
-src_monitor = Monitor(source,"tmp/gym/udrsource_to_source/")
-rew_src,lens_src = test(policy_udr,src_monitor, render=False)
-test_plot(rew_src,lens_src, title="UDR source -> source")
+# print("test UDR source -> source")
+# src_monitor = Monitor(source,"tmp/gym/udrsource_to_source/")
+# rew_src,lens_src = test(policy_udr,src_monitor, render=False)
+# test_plot(rew_src,lens_src, title="UDR source -> source")
 
-print("test UDR source -> target")
-target = gym.make('CustomHopper-target-v0')
-trg_monitor = Monitor(target,"tmp/gym/udrsource_to_target/")
-rew_trg,lens_trg = test(policy_udr,trg_monitor, render=False)
-test_plot(rew_trg,lens_trg, title="UDR source -> target")
+# print("test UDR source -> target")
+# target = gym.make('CustomHopper-target-v0')
+# trg_monitor = Monitor(target,"tmp/gym/udrsource_to_target/")
+# rew_trg,lens_trg = test(policy_udr,trg_monitor, render=False)
+# test_plot(rew_trg,lens_trg, title="UDR source -> target")

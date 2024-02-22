@@ -1,0 +1,4 @@
+TODO
+
+Train con seed=4 modello source -> target. Salva tempo di training!
+Train con seed=4 modello aa source -> target. Salva tempo di training!
