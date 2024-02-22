@@ -58,10 +58,10 @@ def train(env, Seed=None, lr=0.003, total_timesteps=200000):
     return trained_mdl, env
 
 
-def test(model, env, render=False):
+def test(model, env, render=False, n_val_episodes=100):
 
     rew, lens = evaluate_policy(
-        model, env, n_eval_episodes=100, return_episode_rewards=True, render=render)
+        model, env, n_eval_episodes=n_val_episodes, return_episode_rewards=True, render=render)
     return rew, lens
 
 

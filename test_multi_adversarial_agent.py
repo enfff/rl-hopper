@@ -84,9 +84,10 @@ import gym.spaces
 from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.evaluation import evaluate_policy
 
+from utils import curve_to_plot
+
 ## Policy Evaluation
 
-train_episodes = 100000
 test_episodes = 50
 
 def load_model(alg, env, file):
@@ -99,7 +100,7 @@ def load_model(alg, env, file):
     return model
 
 env_target = gym.make('CustomHopper-target-v0')
-model = load_model('ppo', env_target, 'deception_model_agents/deception_model_agent_dr_seed1.mdl')
+model = load_model('ppo', env_target, 'deception_model_agent_dr_seed1.mdl')
 mean_reward, std_reward = evaluate_policy(model,env_target,n_eval_episodes=test_episodes)
 print(f"Test reward (avg +/- std): ({mean_reward} +/- {std_reward}) - Num episodes: {test_episodes}")
 env_target.close()
