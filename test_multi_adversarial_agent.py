@@ -75,32 +75,40 @@
 
 # BEST LEARNING RATE: 0.001
 
+import sys
+import argparse
+
+print('This program parses arguments! Run with --help for more information')
+
+def parse_args(args=sys.argv[1:]):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--render", action='store_true', default=False, help="Render the environment during test; default: False")
+    parser.add_argument("--test_episodes", type=int, default=50, help="Number of episodes used for testing; default: 50")
+    return parser.parse_args(args)
+
+args = parse_args()
+print(args)
 
 from env.custom_hopper import *
 
 import gym
 import gym.spaces
 
-from stable_baselines3 import PPO, SAC
-from stable_baselines3.common.evaluation import evaluate_policy
-
-from utils import curve_to_plot
+from utils import load_model, test, test_plot
 
 ## Policy Evaluation
 
 test_episodes = 50
 
-def load_model(alg, env, file):
-    if alg == 'ppo':
-        model = PPO.load(file, env=env)
-    elif alg == 'sac':
-        model = SAC.load(file, env=env)
-    else:
-        raise ValueError(f"RL Algo not supported: {alg}")
-    return model
-
 env_target = gym.make('CustomHopper-target-v0')
-model = load_model('ppo', env_target, 'deception_model_agent_dr_seed1.mdl')
-mean_reward, std_reward = evaluate_policy(model,env_target,n_eval_episodes=test_episodes)
-print(f"Test reward (avg +/- std): ({mean_reward} +/- {std_reward}) - Num episodes: {test_episodes}")
+
+seeds = list(range(1, 4))
+
+for seed in seeds:
+    model = load_model('ppo', env_target, f'deception_model_agent_dr_seed{seed}.mdl')
+    # mean_reward, std_reward = evaluate_policy(model,env_target,n_eval_episodes=test_episodes)
+    rew, lens = test(model, env_target, render=args.render, n_val_episodes=test_episodes)
+    # print(f"Test reward (avg +/- std): ({rew} +/- {lens}) - Num episodes: {test_episodes}")
+    test_plot(rew, lens, title=f", random seed ({seed})")
+
 env_target.close()
