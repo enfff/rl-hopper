@@ -10,6 +10,7 @@
 
 """
 
+from datetime import datetime
 from stable_baselines3.common.monitor import Monitor
 from utils import load_model
 import gym
@@ -24,78 +25,20 @@ from utils import curve_to_plot, train, test, test_plot
 import matplotlib as mpl
 mpl.use("GTK3Agg")
 
-# train with different seeds
-# curves=[]
-# seeds=[i for i in range(1,6)]
-# for s in seeds:
-#   print("learn with seed: ",s)
-#   env = gym.make('CustomHopper-source-v0')
-#   model, env = train(env, Seed=s)
-#   x,y=curve_to_plot("./")
-#   curves.append(y)
 
-# # plot
-# fig = plt.figure("Learning curves for different seeds")
-# for i in range(len(seeds)):
-#   plt.plot(curves[i])
-# plt.xlabel("Number of Timesteps")
-# plt.ylabel("Rewards")
-# plt.title("Learning curves for different seeds")
-# plt.legend(["1","2","3","4","5"])
-# plt.show()
+start_time = datetime.now()
 
-# # inspecting the learning rate
-
-# curves_lr=[]
-# lrs=[0.03, 0.003, 0.0003]
-# for l in lrs:
-#   print("learn with lr: ",l)
-#   env = gym.make('CustomHopper-source-v0')
-#   model, env = train(env, Seed=5, lr=l)
-#   x,y=curve_to_plot("./")
-#   curves_lr.append(y)
-
-# # plot
-# fig = plt.figure("Learning curves for different learning rates")
-# for i in range(3):
-#   plt.plot(curves_lr[i])
-# plt.xlabel("Number of Timesteps")
-# plt.ylabel("Rewards")
-# plt.title("Learning curves for different learning rates")
-# plt.legend(['0.03', '0.003', '0.0003'])
-# plt.show()
-
-# further inspecting of the learning rate
-
-# lrs=[0.001, 0.003, 0.005]
-# for l in lrs:
-#   print("learn with lr: ",l)
-#   env = gym.make('CustomHopper-source-v0')
-#   model, env = train(env, Seed=5, lr=l)
-#   x,y=curve_to_plot("./")
-#   curves_lr.append(y)
-
-# # plot
-# fig = plt.figure("Learning curves for different learning rates")
-# for i in range(3,len(curves_lr)):
-#   plt.plot(curves_lr[i])
-# plt.xlabel("Number of Timesteps")
-# plt.ylabel("Rewards")
-# plt.title("Learning curves for different learning rates")
-# plt.legend(['0.001', '0.003', '0.005'])
-# plt.show()
-
-# BEST LEARNING RATE: 0.001
-
-if not os.path.exists("source.zip"):
+# Train if not present
+if not os.path.exists("source_model.zip"):
+    print("Training started for source")
     env = gym.make('CustomHopper-source-v0')
-    model, env = train(env, Seed=5, lr=0.001)
-    rew, lens = test(model, env)
-    test_plot(rew, lens, title="source")
-    model.save("./source")
-    exit()
+    model, env = train(env, total_timesteps=100_000)
+    # rew, lens = test(model, env)
+    # test_plot(rew, lens, title="source")
+    print(f"program ran for: {datetime.now() - start_time} ")
+    model.save("./source_model")
 
 env = gym.make('CustomHopper-source-v0')
-model = load_model('ppo', env, 'source')
-rew, lens = test(model, Monitor(env, "./tmp/gym/source/"))
+model = load_model('ppo', env, 'source_model')
+rew, lens = test(model, Monitor(env, "./tmp/gym/source_model/"))
 test_plot(rew, lens, title="source")

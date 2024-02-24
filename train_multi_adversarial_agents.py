@@ -135,9 +135,13 @@ import csv
 start_time = datetime.now()
 
 # Seeds to train the model
-seeds = list(range(4,6))
+# seeds = list(range(4,6))
 
 # Seed 1 to 3 trained since 23:21 to 09:30
+
+seeds = [4]
+
+lr = 0.003
 
 for seed in seeds:
     if args.save_mass_log:
@@ -151,12 +155,12 @@ for seed in seeds:
     print(f"Learning with {seed = }, start time: {datetime.now()}")
 
     agent_env = gym.make('CustomHopper-source-deception-v0')
-    model = PPO('MlpPolicy', agent_env, seed=seed)
+    model = PPO('MlpPolicy', agent_env, seed=seed, learning_rate=lr)
 
     deception_env = gym.make("AdversarialAgent-v0", agent=model, agent_env=agent_env, num_ep=10, logdir=logdir)
     #check_env(deception_env)
 
-    deception = SAC('MlpPolicy', deception_env, seed=seed)
+    deception = SAC('MlpPolicy', deception_env, seed=seed, learning_rate=lr)
 
     agent_env.set_deceptor(deception)
 
@@ -190,6 +194,6 @@ for seed in seeds:
         if args.print_extrainfo:
           print('\n',f'{total_episodes}','\n')
 
-    model.save(f'deception_model_agent_dr_seed{seed}.mdl')
+    model.save(f'deception_model_agent_dr_seed{seed}lr{lr}.mdl')
 
 print(f"End of learning, {len(seeds)} model(s) generated, finish time: {datetime.now()}, program ran for: {datetime.now() - start_time} ")

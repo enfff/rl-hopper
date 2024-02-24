@@ -58,11 +58,14 @@ def train(env, Seed=None, lr=0.003, total_timesteps=200000):
     return trained_mdl, env
 
 
-def test(model, env, render=False, n_val_episodes=100):
+def test(model, env, render=False, n_val_episodes=50):
 
-    rew, lens = evaluate_policy(
-        model, env, n_eval_episodes=n_val_episodes, return_episode_rewards=True, render=render)
+    rew, lens = evaluate_policy(model, env, n_eval_episodes=n_val_episodes, return_episode_rewards=True, render=render)
+
+    print(f"Test reward (avg +/- std): ({np.mean(np.array(rew))} +/- {np.mean(np.array(lens))}) - Num episodes: {n_val_episodes}")
+
     return rew, lens
+
 
 
 def test_plot(rew, lens, title=None):
@@ -90,6 +93,7 @@ def test_plot(rew, lens, title=None):
 
     plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.5,
                         wspace=0.35)
+
     plt.show()
 
 

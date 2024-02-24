@@ -1,0 +1,19 @@
+Source -> Source
+Test reward (avg +/- std): (731.3353523 +/- 4.584921368965164) - Num episodes: 50
+Source -> Target
+Test reward (avg +/- std): (672.4824941800001 +/- 5.051096169874019) - Num episodes: 50
+Target -> Target
+Test reward (avg +/- std): (1109.97270888 +/- 14.358389823656887) - Num episodes: 50
+
+
+Source DR -> Target
+Test reward (avg +/- std): (655.63563342 +/- 26.591848729119672) - Num episodes: 50
+
+Source Deceptor -> Target
+Test reward (avg +/- std): (1298.2993763136865 +/- 240.3257421033349) - Num episodes: 50
+
+Source -> Source 731
+Source -> Target 672
+Target -> Target 1109
+UDR -> Target 655
+Adversarial Agent -> Target 1298
