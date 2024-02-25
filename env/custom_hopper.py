@@ -20,7 +20,7 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
 
     def set_random_parameters(self):
         """Set random masses"""
-        self.set_parameters(*self.sample_parameters())
+        self.set_parameters(self.sample_parameters())
 
     def sample_parameters(self):
         """Sample masses according to a domain randomization distribution"""
@@ -101,7 +101,6 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
         self.viewer.cam.distance = self.model.stat.extent * 0.75
         self.viewer.cam.lookat[2] = 1.15
         self.viewer.cam.elevation = -20
-
 
 
 """

@@ -29,16 +29,16 @@ mpl.use("GTK3Agg")
 start_time = datetime.now()
 
 # Train if not present
-if not os.path.exists("source_model.zip"):
+if not os.path.exists("source_model"):
     print("Training started for source")
     env = gym.make('CustomHopper-source-v0')
     model, env = train(env, total_timesteps=100_000)
     # rew, lens = test(model, env)
     # test_plot(rew, lens, title="source")
     print(f"program ran for: {datetime.now() - start_time} ")
-    model.save("./source_model")
+    model.save("./source_model.mdl")
 
 env = gym.make('CustomHopper-source-v0')
-model = load_model('ppo', env, 'source_model')
+model = load_model('ppo', env, 'source_model.mdl')
 rew, lens = test(model, Monitor(env, "./tmp/gym/source_model/"))
-test_plot(rew, lens, title="source")
+test_plot(rew, lens, title="source", save_filename="source_source")

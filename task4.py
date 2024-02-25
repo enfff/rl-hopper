@@ -28,27 +28,16 @@ from datetime import datetime
 
 start_time = datetime.now()
 
-if not os.path.exists("dr_model.zip"):
-    env = gym.make('CustomHopper-source-dr-v0')
-    model, env = train(env, total_timesteps=100_000)
-    model.save("./dr_model")
+if not os.path.exists("dr_model.mdl"):
+    env = gym.make('CustomHopper-dr-v0')
+    model, env = train(env, total_timesteps=5)
+    model.save("./dr_model.mdl")
     print(f"Model trained in: {datetime.now() - start_time}")
 
-source = gym.make('CustomHopper-source-v0')
-source_udr = PPO.load("dr_model")
-policy_udr = source_udr.policy
-
-# print("test UDR source")
-# rew, lens = test(source_udr, source, render=False)
-# test_plot(rew,lens, title="UDR source")
-
-# print("test UDR source -> source")
-# src_monitor = Monitor(source,"tmp/gym/udrsource_to_source/")
-# rew_src,lens_src = test(policy_udr,src_monitor, render=False)
-# test_plot(rew_src,lens_src, title="UDR source -> source")
+env_target = gym.make('CustomHopper-target-v0')
+env_target_monitor_source = Monitor(env_target, "tmp/gym/drsource_target/")
+source_model = PPO.load(path="dr_model.mdl", env=env_target_monitor_source)
 
 print("test dr source -> target")
-target = gym.make('CustomHopper-target-v0')
-trg_monitor = Monitor(target,"tmp/gym/drmodel_target/")
-rew_trg,lens_trg = test(policy_udr,trg_monitor, render=False)
-test_plot(rew_trg,lens_trg, title="dr source -> target")
+rew,lens = test(source_model, env_target_monitor_source, render=False)
+test_plot(rew,lens, title="dr source -> target", save_filename="drsource_target")

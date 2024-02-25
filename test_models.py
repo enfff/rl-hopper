@@ -28,7 +28,6 @@ from env.custom_hopper import *
 import gym
 import gym.spaces
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.evaluation import evaluate_policy
 
 from utils import load_model, test, test_plot
 
@@ -47,16 +46,16 @@ dr_model = load_model('ppo', env_target_monitor_dr, args.dr_path)
 deception_model = load_model('ppo', env_target_monitor_deception, args.deception_path)
 
 rew, lens = test(source_model, env_target_monitor_source, render=args.render, n_val_episodes=args.test_episodes)
-test_plot(rew, lens, title=f"source -> target")
+test_plot(rew, lens, title=f"source -> target", save_filename="source_target")
 
 rew, lens = test(target_model, env_target_monitor_target, render=args.render, n_val_episodes=args.test_episodes)
-test_plot(rew, lens, title=f"target -> target")
+test_plot(rew, lens, title=f"target -> target", save_filename="target_target")
 
 rew, lens = test(dr_model, env_target_monitor_dr, render=args.render, n_val_episodes=args.test_episodes)
-test_plot(rew, lens, title=f"dr source -> target")
+test_plot(rew, lens, title=f"dr source -> target", save_filename="drsource_target")
 
 rew, lens = test(deception_model, env_target_monitor_deception, render=args.render, n_val_episodes=args.test_episodes)
-test_plot(rew, lens, title=f"deceptor source -> target")
+test_plot(rew, lens, title=f"deceptor source -> target", save_filename="deceptorsource_target")
 
 
 env_target.close()

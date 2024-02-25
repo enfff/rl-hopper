@@ -25,25 +25,25 @@ mpl.use("GTK3Agg")
 
 start_time = datetime.now()
 
-if not os.path.exists("target_model.zip"):
+if not os.path.exists("target_model.mdl"):
     print("Training target")
     env = gym.make('CustomHopper-target-v0')
-    model, env = train(env, total_timesteps=100_000)
-    model.save("./target_model")
+    model, env = train(env, total_timesteps=100_00)
+    model.save("./target_model.mdl")
     print(f"program ran for: {datetime.now() - start_time} ")
 
 
 env = gym.make('CustomHopper-target-v0')
-model = load_model('ppo', env, 'target_model')
+model = load_model('ppo', env, 'target_model.mdl')
 rew, lens = test(model, Monitor(env, "./tmp/gym/target_model/"))
 test_plot(rew, lens, title="target")
 
 # Testing
 # load source model from the previous task
-model_src = PPO.load("source_model")
+model_src = PPO.load("source_model.mdl")
 # policy_src = model_src.policy
 
-model_trg = PPO.load("target_model")
+model_trg = PPO.load("target_model.mdl")
 # policy_trg = model_trg.policy
 
 source = gym.make('CustomHopper-source-v0')
@@ -57,15 +57,15 @@ target = gym.make('CustomHopper-target-v0')
 # # source.render()
 # test_plot(rew1,lens1, title="source -> source")
 
-# source -> target
+# source -> targe
 monitor_trg = Monitor(target)
-rew2, lens2 = test(model_src, monitor_trg, False)
+rew2, lens2 = test(model_src, monitor_trg, render=False)
 print("test source -> target")
-test_plot(rew2, lens2, title="source -> target")
+test_plot(rew2, lens2, title="source -> target", save_filename="source_target")
 
 # target -> target
 monitor_trg2 = Monitor(target)
-rew3, lens3 = test(model_trg, monitor_trg2, False)
+rew3, lens3 = test(model_trg, monitor_trg2, render=False)
 target.close()
 print("test target -> target")
-test_plot(rew3, lens3, title="target -> target")
+test_plot(rew3, lens3, title="target -> target", save_filename="target_target")

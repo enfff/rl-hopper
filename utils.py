@@ -53,7 +53,7 @@ def train(env, Seed=None, lr=0.003, total_timesteps=200000):
 
     env = Monitor(env, "./")
 
-    model = PPO("MlpPolicy", env, learning_rate=lr, device='cpu', seed=Seed)
+    model = PPO("MlpPolicy", env, learning_rate=lr, device='cuda', seed=Seed)
     trained_mdl = model.learn(total_timesteps=total_timesteps)
     return trained_mdl, env
 
@@ -68,7 +68,7 @@ def test(model, env, render=False, n_val_episodes=50):
 
 
 
-def test_plot(rew, lens, title=None):
+def test_plot(rew, lens, title=None, save_filename=None):
     # average return over 50 episodes
 
     avg = []
@@ -93,6 +93,9 @@ def test_plot(rew, lens, title=None):
 
     plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.5,
                         wspace=0.35)
+    
+    if save_filename:
+        plt.savefig(f"{save_filename}.png")
 
     plt.show()
 

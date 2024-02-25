@@ -30,8 +30,8 @@ An example of the standard plot nomenclature is `source -> target`. That means t
 
 `task4.py` trains *dr_model.mdl*, and tests *drsource -> target*. Please note: if there's a file named `dr_model.mdl`, it just tests it.
 
+`train_adversarial_agent.py`: Trains the adversarial agent and saves it as *deception_model_agent_dr*. Run with `--help` to check all the available commands.
+
 `train_multi_adversarial_agents.py`: Trains 5 different models, with seeds ranging from 1 to 5, and saves them. Run with `--help` to check all the available commands.
 
-`test_adversarial_agent.py`: Tests *deceptorsource -> target*. Run with `--help` to check all the available commands.
-
-`test_colab`: Tests the following cases: *source -> target*, *target -> target*, *drsource -> target*, and *deceptorsource -> target*
+`test_models`: Tests the following cases: *source -> target*, *target -> target*, *drsource -> target*, and *deceptorsource -> target*

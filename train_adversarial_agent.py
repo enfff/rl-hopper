@@ -18,6 +18,7 @@ def parse_args(args=sys.argv[1:]):
     parser.add_argument("--total_timesteps", type=int, default=500, help="Number of timesteps to train the adversarial agent (SAC); default: 500")
     parser.add_argument("--deception_train_steps", type=int, default=50, help="How many training steps the deceptor does for each episode; default: 50")
     parser.add_argument("--lr", type=float, default=0.0003, help="Learning rate for all the models; default: 0.0003")
+    parser.add_argument("--seed", type=int, default=None, help="Seed for the training; default: None")
     return parser.parse_args(args)
 
 args = parse_args()
@@ -138,65 +139,58 @@ import csv
 
 start_time = datetime.now()
 
-# Seeds to train the model
-# seeds = list(range(4,6))
+if args.save_mass_log:
+  logdir = f'tmp/gym/adversarial_agent/'
+  mass_monitor_filepath = logdir + 'mass_monitor.csv'
+  if not os.path.exists(logdir):
+      os.makedirs(logdir, exist_ok=True)
+else:
+  logdir = None
 
-# Seed 1 to 3 trained since 23:21 to 09:30
+if args.seed: print(f"Learning with {args.seed = }")
 
-# seeds = list(range(1,6))
-seeds = list(range(1,2))
+print(f"start time: {datetime.now()}")
 
-for seed in seeds:
-    if args.save_mass_log:
-      logdir = f'tmp/gym/adversarial_agent_seed{seed}/'
-      mass_monitor_filepath = logdir + 'mass_monitor.csv'
-      if not os.path.exists(logdir):
-          os.makedirs(logdir, exist_ok=True)
-    else:
-      logdir = None
+agent_env = gym.make('CustomHopper-deception-v0')
+model = PPO('MlpPolicy', agent_env, seed=args.seed, learning_rate=args.lr)
 
-    print(f"Learning with {seed = }, start time: {datetime.now()}")
+deception_env = gym.make("AdversarialAgent-v0", agent=model, agent_env=agent_env, num_ep=10, logdir=logdir)
+#check_env(deception_env)
 
-    agent_env = gym.make('CustomHopper-deception-v0')
-    model = PPO('MlpPolicy', agent_env, seed=seed, learning_rate=args.lr)
+deception = SAC('MlpPolicy', deception_env, seed=args.seed, learning_rate=args.lr)
 
-    deception_env = gym.make("AdversarialAgent-v0", agent=model, agent_env=agent_env, num_ep=10, logdir=logdir)
-    #check_env(deception_env)
+agent_env.set_deceptor(deception)
 
-    deception = SAC('MlpPolicy', deception_env, seed=seed, learning_rate=args.lr)
+total_episodes = 0
+max_step = 500
 
-    agent_env.set_deceptor(deception)
+callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=10)
 
-    total_episodes = 0
-    max_step = 500
+thighs = []
+legs = []
+foots = []
 
-    callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=10)
+if args.print_extrainfo:
+  info1 = "generated_masses"
+  info2 = "mean_reward"
+  info3 = "reward"
+  print(f'{info1:^30} {info2:^25} {info3:^10} ')
+  del info1, info2, info3 # Quick and dirty
 
-    thighs = []
-    legs = []
-    foots = []
+while total_episodes < args.num_episodes:
+
+    #Train deception module
+    for i in range(args.deception_train_steps):
+        deception.learn(1, callback_max_episodes)
+
+    #Train Agent
+    model.learn(args.total_timesteps)
+
+    total_episodes+=1
 
     if args.print_extrainfo:
-      info1 = "generated_masses"
-      info2 = "mean_reward"
-      info3 = "reward"
-      print(f'{info1:^30} {info2:^25} {info3:^10} ')
-      del info1, info2, info3 # Quick and dirty
+      print('\n',f'{total_episodes}','\n')
 
-    while total_episodes < args.num_episodes:
+model.save(f'deception_model_agent_dr.mdl')
 
-        #Train deception module
-        for i in range(args.deception_train_steps):
-            deception.learn(1, callback_max_episodes)
-
-        #Train Agent
-        model.learn(args.total_timesteps)
-
-        total_episodes+=1
-
-        if args.print_extrainfo:
-          print('\n',f'{total_episodes}','\n')
-
-    model.save(f'deception_model_agent_dr_seed_{seed}lr{args.lr}.mdl')
-
-print(f"End of learning, {len(seeds)} model(s) generated, finish time: {datetime.now()}, program ran for: {datetime.now() - start_time} ")
+print(f"End of learning, program ran for: {datetime.now() - start_time} ")
