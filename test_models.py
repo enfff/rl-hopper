@@ -57,5 +57,4 @@ test_plot(rew, lens, title=f"dr source -> target", save_filename="drsource_targe
 rew, lens = test(deception_model, env_target_monitor_deception, render=args.render, n_val_episodes=args.test_episodes)
 test_plot(rew, lens, title=f"deceptor source -> target", save_filename="deceptorsource_target")
 
-
 env_target.close()
