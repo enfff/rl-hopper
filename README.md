@@ -1,6 +1,6 @@
 # Guided Domain Randomization through Adversarial Agent
 
-A novel approach to Guided Domain Randomization through the implementation of an Adversarial Agent, trained to confuse the Task Agent in order to produce more robust results. Read the paper discussing the ideas, implementation and results [here](exam_paper.pdf). Team members: [Simone Carena](https://github.com/SimoneCarena), [Francesco Paolo Carmone](https://github.com/enfff), [Ludovica Mazzucco](https://github.com/lumazzucco)
+A novel approach to Guided Domain Randomization through the implementation of an Adversarial Agent, trained to confuse the Task Agent in order to produce more robust results. Read the paper discussing the ideas, implementation and results [here](Paper.pdf). Team members: [Simone Carena](https://github.com/SimoneCarena), [Francesco Paolo Carmone](https://github.com/enfff), [Ludovica Mazzucco](https://github.com/lumazzucco)
 
 Official assignment at [Google Doc](https://docs.google.com/document/d/1wV60fIh1jCifi9O4ID6R61IgQry79ftxOuPJj9JyCow/edit?usp=sharing).
 
